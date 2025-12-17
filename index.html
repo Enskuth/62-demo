@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<title>ระบบจัดการเงินห้อง</title>
+
+<style>
+/* ===== RESET ===== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Segoe UI", sans-serif;
+}
+
+/* ===== BACKGROUND ===== */
+body {
+  min-height: 100vh;
+  background: linear-gradient(-45deg,#ffdee9,#b5fffc,#cfd9df,#fef9d7);
+  background-size: 400% 400%;
+  animation: gradientBG 12s ease infinite;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+@keyframes gradientBG {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* ===== CONTAINER ===== */
+.container {
+  width: 360px;
+  background: rgba(255,255,255,0.88);
+  backdrop-filter: blur(10px);
+  padding: 35px;
+  border-radius: 22px;
+  text-align: center;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+  z-index: 10;
+}
+
+h1 {
+  font-size: 26px;
+  margin-bottom: 10px;
+}
+
+.money-box {
+  font-size: 20px;
+  margin: 15px 0 25px;
+  color: #333;
+}
+
+/* ===== BUTTON ===== */
+a {
+  text-decoration: none;
+}
+
+.menu-btn {
+  width: 100%;
+  padding: 14px;
+  margin: 10px 0;
+  font-size: 18px;
+  border: none;
+  border-radius: 14px;
+  cursor: pointer;
+  background: linear-gradient(135deg,#74ebd5,#9face6);
+  color: #fff;
+  transition: 0.3s;
+}
+
+.menu-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+}
+
+/* ===== EMOJI ===== */
+.emoji {
+  position: fixed;
+  top: -40px;
+  font-size: 22px;
+  animation: fall linear forwards;
+  opacity: 0.9;
+}
+
+@keyframes fall {
+  to {
+    transform: translateY(110vh) rotate(360deg);
+    opacity: 0;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+  <h1>🏠 ระบบเงินห้อง</h1>
+
+  <div class="money-box">
+    💰 เงินห้องตอนนี้: <span id="money">กำลังโหลด...</span>
+  </div>
+
+  <a href="duty.html"><button class="menu-btn">🧹 ตรวจเวร</button></a>
+  <a href="money.html"><button class="menu-btn">💰 เช็คเงินห้อง</button></a>
+  <a href="members.html"><button class="menu-btn">📋 รายชื่อเวรประจำวัน</button></a>
+</div>
+
+<!-- ===== FIREBASE + SCRIPT ===== -->
+<script type="module">
+/* Firebase */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyD828fi7fnEuzeOvRbM6K1ESzcXRIZj8l8",
+  authDomain: "money-c4c91.firebaseapp.com",
+  projectId: "money-c4c91",
+  storageBucket: "money-c4c91.firebasestorage.app",
+  messagingSenderId: "398940344820",
+  appId: "1:398940344820:web:da5d8265be888546dee9a1",
+  measurementId: "G-LKBGF8JRBS"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+/* โหลดเงินห้อง */
+async function loadMoney() {
+  const ref = doc(db, "room", "money");
+  const snap = await getDoc(ref);
+  if (snap.exists()) {
+    document.getElementById("money").innerText =
+      snap.data().amount + " บาท";
+  } else {
+    document.getElementById("money").innerText = "ยังไม่มีข้อมูล";
+  }
+}
+
+loadMoney();
+
+/* Emoji Rain */
+const emojis = ["💰","🧹","🏠","📋","✨"];
+setInterval(() => {
+  const e = document.createElement("div");
+  e.className = "emoji";
+  e.innerText = emojis[Math.floor(Math.random()*emojis.length)];
+  e.style.left = Math.random()*100 + "vw";
+  e.style.animationDuration = (3+Math.random()*4)+"s";
+  document.body.appendChild(e);
+  setTimeout(()=>e.remove(),7000);
+},300);
+</script>
+
+</body>
+</html>

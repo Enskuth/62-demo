@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<title>ตรวจเวรประจำวัน</title>
+
+<style>
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+  font-family:"Segoe UI",sans-serif;
+}
+
+body{
+  min-height:100vh;
+  background:linear-gradient(-45deg,#e0c3fc,#8ec5fc,#fdfbfb,#ebedee);
+  background-size:400% 400%;
+  animation:bg 12s ease infinite;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  overflow:hidden;
+}
+
+@keyframes bg{
+  0%{background-position:0% 50%}
+  50%{background-position:100% 50%}
+  100%{background-position:0% 50%}
+}
+
+.container{
+  width:360px;
+  background:rgba(255,255,255,0.9);
+  border-radius:20px;
+  padding:25px;
+  text-align:center;
+  box-shadow:0 20px 40px rgba(0,0,0,0.15);
+  z-index:10;
+}
+
+h1{
+  margin-bottom:10px;
+}
+
+.day{
+  font-size:20px;
+  margin-bottom:15px;
+}
+
+.student{
+  padding:10px;
+  border-radius:12px;
+  margin:6px 0;
+  background:#f1f3f5;
+}
+
+.status{
+  font-weight:bold;
+  margin-top:8px;
+}
+
+.done{color:green}
+.notyet{color:red}
+
+button{
+  margin-top:12px;
+  padding:10px;
+  width:100%;
+  border:none;
+  border-radius:12px;
+  cursor:pointer;
+  background:linear-gradient(135deg,#74ebd5,#9face6);
+  color:#fff;
+}
+
+.back{
+  background:#999;
+}
+
+/* emoji */
+.emoji{
+  position:fixed;
+  top:-40px;
+  animation:fall linear forwards;
+  font-size:22px;
+}
+@keyframes fall{
+  to{
+    transform:translateY(110vh) rotate(360deg);
+    opacity:0;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+  <h1>🧹 ตรวจเวร</h1>
+  <div class="day" id="dayText"></div>
+
+  <div id="students"></div>
+
+  <button onclick="teacherLogin()">🔑 โหมดครู</button>
+  <button class="back" onclick="location.href='index.html'">⬅ กลับหน้าแรก</button>
+</div>
+
+<script type="module">
+/* ===== Firebase ===== */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyD828fi7fnEuzeOvRbM6K1ESzcXRIZj8l8",
+  authDomain: "money-c4c91.firebaseapp.com",
+  projectId: "money-c4c91",
+  storageBucket: "money-c4c91.firebasestorage.app",
+  messagingSenderId: "398940344820",
+  appId: "1:398940344820:web:da5d8265be888546dee9a1"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+/* ===== DATA ===== */
+const dutyList = {
+  mon:["พวัลย์","ชลณิชา","นราทิพย์","พงศ์พณิช","ดัสกร"],
+  tue:["สุกัญญา","ปุณวัจน์","สุพัตรา","พสิษฐ์","วรายุทธ์"],
+  wed:["ราชภูมิ","ประกาศิต","จักรกิต","ปัญญา"],
+  thu:["อธิกเกรียติ","รัฐภูมิ","พีรยุทธ์","จักริน","กมลวรรณ"],
+  fri:["ณัฐธวัช","ศุภกร","พีระเดช","อดิเทพ","นิพิฐพนธ์"]
+};
+
+const dayMap = {
+  mon:"วันจันทร์",
+  tue:"วันอังคาร",
+  wed:"วันพุธ",
+  thu:"วันพฤหัสบดี",
+  fri:"วันศุกร์"
+};
+
+let isTeacher = false;
+
+/* ===== FUNCTIONS ===== */
+function getTodayKey(){
+  const d = new Date().getDay();
+  return {1:"mon",2:"tue",3:"wed",4:"thu",5:"fri"}[d] || null;
+}
+
+async function resetIfNewDay(todayKey){
+  const ref = doc(db,"duty","today");
+  const snap = await getDoc(ref);
+  const today = new Date().toISOString().split("T")[0];
+
+  if(!snap.exists() || snap.data().date !== today){
+    await setDoc(ref,{
+      date: today,
+      day: todayKey,
+      done:false
+    });
+  }
+}
+
+async function loadDuty(){
+  const todayKey = getTodayKey();
+  if(!todayKey){
+    document.body.innerHTML="<h2>วันนี้ไม่มีเวร</h2>";
+    return;
+  }
+
+  document.getElementById("dayText").innerText = dayMap[todayKey];
+  await resetIfNewDay(todayKey);
+
+  const ref = doc(db,"duty","today");
+  const snap = await getDoc(ref);
+  const done = snap.data().done;
+
+  const box = document.getElementById("students");
+  box.innerHTML="";
+
+  dutyList[todayKey].forEach(name=>{
+    box.innerHTML += `
+      <div class="student">
+        ${name}
+        <div class="status ${done?'done':'notyet'}">
+          ${done?'✔ ทำเวรแล้ว':'✖ ยังไม่ทำ'}
+        </div>
+      </div>
+    `;
+  });
+
+  if(isTeacher){
+    box.innerHTML += `
+      <button onclick="updateDuty(true)">✔ ติ๊กว่าทำเวรแล้ว</button>
+    `;
+  }
+}
+
+window.updateDuty = async(val)=>{
+  await setDoc(doc(db,"duty","today"),{
+    date:new Date().toISOString().split("T")[0],
+    day:getTodayKey(),
+    done:val
+  });
+  loadDuty();
+}
+
+window.teacherLogin = ()=>{
+  const pass = prompt("ใส่รหัสครู");
+  if(pass==="1234"){
+    isTeacher = true;
+    alert("เข้าสู่โหมดครู");
+    loadDuty();
+  }else{
+    alert("รหัสไม่ถูกต้อง");
+  }
+}
+
+/* INIT */
+loadDuty();
+
+/* emoji */
+const emojis=["🧹","✨","📋"];
+setInterval(()=>{
+  const e=document.createElement("div");
+  e.className="emoji";
+  e.innerText=emojis[Math.floor(Math.random()*emojis.length)];
+  e.style.left=Math.random()*100+"vw";
+  e.style.animationDuration=(3+Math.random()*4)+"s";
+  document.body.appendChild(e);
+  setTimeout(()=>e.remove(),7000);
+},400);
+</script>
+
+</body>
+</html>

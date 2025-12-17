@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<title>เงินห้อง</title>
+
+<style>
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+  font-family:"Segoe UI",sans-serif;
+}
+
+body{
+  min-height:100vh;
+  background:linear-gradient(-45deg,#fdfbfb,#ebedee,#d4fc79,#96e6a1);
+  background-size:400% 400%;
+  animation:bg 12s ease infinite;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  overflow:hidden;
+}
+
+@keyframes bg{
+  0%{background-position:0% 50%}
+  50%{background-position:100% 50%}
+  100%{background-position:0% 50%}
+}
+
+.container{
+  width:360px;
+  background:rgba(255,255,255,0.9);
+  padding:30px;
+  border-radius:24px;
+  text-align:center;
+  box-shadow:0 20px 40px rgba(0,0,0,0.15);
+  z-index:10;
+}
+
+h1{
+  margin-bottom:15px;
+}
+
+.money{
+  font-size:48px;
+  font-weight:bold;
+  color:#2c7be5;
+  margin:20px 0;
+}
+
+.control{
+  display:none;
+}
+
+input{
+  width:100%;
+  padding:10px;
+  margin:6px 0;
+  font-size:16px;
+  border-radius:10px;
+  border:1px solid #ccc;
+}
+
+button{
+  width:100%;
+  padding:12px;
+  margin-top:10px;
+  border:none;
+  border-radius:12px;
+  cursor:pointer;
+  background:linear-gradient(135deg,#74ebd5,#9face6);
+  color:#fff;
+  font-size:16px;
+}
+
+.back{
+  background:#999;
+}
+
+/* emoji */
+.emoji{
+  position:fixed;
+  top:-40px;
+  animation:fall linear forwards;
+  font-size:22px;
+}
+@keyframes fall{
+  to{
+    transform:translateY(110vh) rotate(360deg);
+    opacity:0;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+  <h1>💰 เงินห้อง</h1>
+
+  <div class="money">
+    <span id="money">0</span> บาท
+  </div>
+
+  <div class="control" id="teacherBox">
+    <input type="number" id="amount" placeholder="จำนวนเงิน (+ เพิ่ม / - ลด)">
+    <button onclick="updateMoney()">บันทึกเงิน</button>
+  </div>
+
+  <button onclick="teacherLogin()">🔑 โหมดครู</button>
+  <button class="back" onclick="location.href='index.html'">⬅ กลับหน้าแรก</button>
+</div>
+
+<script type="module">
+/* ===== Firebase ===== */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyD828fi7fnEuzeOvRbM6K1ESzcXRIZj8l8",
+  authDomain: "money-c4c91.firebaseapp.com",
+  projectId: "money-c4c91",
+  storageBucket: "money-c4c91.firebasestorage.app",
+  messagingSenderId: "398940344820",
+  appId: "1:398940344820:web:da5d8265be888546dee9a1"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+const moneyEl = document.getElementById("money");
+const teacherBox = document.getElementById("teacherBox");
+
+/* ===== LOAD MONEY ===== */
+async function loadMoney(){
+  const ref = doc(db,"room","money");
+  const snap = await getDoc(ref);
+  if(snap.exists()){
+    moneyEl.innerText = snap.data().amount;
+  }else{
+    await setDoc(ref,{amount:0});
+    moneyEl.innerText = 0;
+  }
+}
+
+/* ===== UPDATE MONEY ===== */
+window.updateMoney = async ()=>{
+  const val = Number(document.getElementById("amount").value);
+  if(isNaN(val)) return;
+
+  const ref = doc(db,"room","money");
+  const snap = await getDoc(ref);
+  const current = snap.data().amount;
+
+  await setDoc(ref,{amount: current + val});
+  document.getElementById("amount").value="";
+  loadMoney();
+};
+
+let isTeacher=false;
+window.teacherLogin = ()=>{
+  const pass = prompt("ใส่รหัสครู");
+  if(pass==="1234"){
+    isTeacher=true;
+    teacherBox.style.display="block";
+    alert("เข้าสู่โหมดครู");
+  }else{
+    alert("รหัสไม่ถูกต้อง");
+  }
+};
+
+loadMoney();
+
+/* emoji */
+const emojis=["💰","✨","💸"];
+setInterval(()=>{
+  const e=document.createElement("div");
+  e.className="emoji";
+  e.innerText=emojis[Math.floor(Math.random()*emojis.length)];
+  e.style.left=Math.random()*100+"vw";
+  e.style.animationDuration=(3+Math.random()*4)+"s";
+  document.body.appendChild(e);
+  setTimeout(()=>e.remove(),7000);
+},400);
+</script>
+
+</body>
+</html>

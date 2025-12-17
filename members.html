@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<title>รายชื่อเวรห้อง</title>
+
+<style>
+* {
+  box-sizing: border-box;
+  font-family: "Segoe UI", sans-serif;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: linear-gradient(-45deg,#fdfbfb,#ebedee,#e0c3fc,#8ec5fc);
+  background-size: 400% 400%;
+  animation: bg 12s ease infinite;
+}
+
+@keyframes bg {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.back-btn {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  background: rgba(255,255,255,0.85);
+  padding: 10px 18px;
+  border-radius: 14px;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(0,0,0,.2);
+}
+
+.container {
+  width: 95%;
+  max-width: 1100px;
+  margin: 60px auto;
+  background: rgba(255,255,255,0.9);
+  border-radius: 24px;
+  padding: 30px;
+  box-shadow: 0 20px 40px rgba(0,0,0,.15);
+}
+
+h1 {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+/* ===== ตาราง ===== */
+.table {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 16px;
+}
+
+.day {
+  border-radius: 20px;
+  padding: 16px;
+  color: #2d3436;
+  box-shadow: 0 10px 25px rgba(0,0,0,.15);
+}
+
+.day h2 {
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+/* ===== สีแต่ละวัน ===== */
+.mon { background: #74b9ff; }
+.tue { background: #ffb6c1; }
+.wed { background: #55efc4; }
+.thu { background: #a29bfe; }
+.fri { background: #fab1a0; }
+
+/* ===== ชื่อนักเรียน ===== */
+.student {
+  background: rgba(255,255,255,0.8);
+  margin: 6px 0;
+  padding: 8px 12px;
+  border-radius: 12px;
+  text-align: center;
+  font-weight: bold;
+}
+</style>
+</head>
+
+<body>
+
+<div class="back-btn" onclick="location.href='index.html'">⬅ กลับหน้าแรก</div>
+
+<div class="container">
+  <h1>📋 ตารางเวรประจำสัปดาห์</h1>
+
+  <div class="table">
+    <div class="day mon">
+      <h2>จันทร์</h2>
+      <div class="student">นักเรียน 1</div>
+      <div class="student">นักเรียน 2</div>
+    </div>
+
+    <div class="day tue">
+      <h2>อังคาร</h2>
+      <div class="student">นักเรียน 3</div>
+      <div class="student">นักเรียน 4</div>
+    </div>
+
+    <div class="day wed">
+      <h2>พุธ</h2>
+      <div class="student">นักเรียน 5</div>
+      <div class="student">นักเรียน 6</div>
+    </div>
+
+    <div class="day thu">
+      <h2>พฤหัส</h2>
+      <div class="student">นักเรียน 1</div>
+      <div class="student">นักเรียน 3</div>
+    </div>
+
+    <div class="day fri">
+      <h2>ศุกร์</h2>
+      <div class="student">นักเรียน 2</div>
+      <div class="student">นักเรียน 4</div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
