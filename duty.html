@@ -2,129 +2,108 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8">
-<title>ตรวจเวรประจำวัน</title>
+<title>ตรวจเวร</title>
 
 <style>
-*{
-  margin:0;
-  padding:0;
-  box-sizing:border-box;
-  font-family:"Segoe UI",sans-serif;
-}
-
 body{
+  margin:0;
   min-height:100vh;
-  background:linear-gradient(-45deg,#e0c3fc,#8ec5fc,#fdfbfb,#ebedee);
-  background-size:400% 400%;
-  animation:bg 12s ease infinite;
+  background:linear-gradient(135deg,#c9e9ff,#fef6ff);
   display:flex;
   justify-content:center;
   align-items:center;
-  overflow:hidden;
+  font-family:"Segoe UI",sans-serif;
 }
-
-@keyframes bg{
-  0%{background-position:0% 50%}
-  50%{background-position:100% 50%}
-  100%{background-position:0% 50%}
-}
-
-.container{
-  width:360px;
-  background:rgba(255,255,255,0.9);
-  border-radius:20px;
+.box{
+  background:#fff;
+  width:95%;
+  max-width:700px;
   padding:25px;
-  text-align:center;
-  box-shadow:0 20px 40px rgba(0,0,0,0.15);
-  z-index:10;
+  border-radius:20px;
+  box-shadow:0 20px 40px rgba(0,0,0,.15);
 }
-
 h1{
+  text-align:center;
   margin-bottom:10px;
 }
-
-.day{
-  font-size:20px;
-  margin-bottom:15px;
-}
-
-.student{
-  padding:10px;
-  border-radius:12px;
-  margin:6px 0;
-  background:#f1f3f5;
-}
-
-.status{
-  font-weight:bold;
-  margin-top:8px;
-}
-
-.done{color:green}
-.notyet{color:red}
-
-button{
-  margin-top:12px;
-  padding:10px;
+table{
   width:100%;
+  border-collapse:collapse;
+  margin-top:15px;
+}
+th,td{
+  border:1px solid #ddd;
+  padding:10px;
+  text-align:center;
+}
+th{
+  background:#f0f8ff;
+}
+img{
+  width:80px;
+  border-radius:10px;
+}
+.done{color:green;font-weight:bold}
+.notyet{color:red}
+button{
+  padding:6px 10px;
   border:none;
-  border-radius:12px;
+  border-radius:8px;
   cursor:pointer;
-  background:linear-gradient(135deg,#74ebd5,#9face6);
-  color:#fff;
 }
-
+.uploadBtn{background:#6dd5fa}
+.teacherBtn{background:#fbc531}
 .back{
-  background:#999;
-}
-
-/* emoji */
-.emoji{
-  position:fixed;
-  top:-40px;
-  animation:fall linear forwards;
-  font-size:22px;
-}
-@keyframes fall{
-  to{
-    transform:translateY(110vh) rotate(360deg);
-    opacity:0;
-  }
+  margin-top:15px;
+  width:100%;
+  background:#bbb;
 }
 </style>
 </head>
 
 <body>
 
-<div class="container">
+<div class="box">
   <h1>🧹 ตรวจเวร</h1>
-  <div class="day" id="dayText"></div>
+  <div id="dayTitle"></div>
 
-  <div id="students"></div>
+  <table>
+    <thead>
+      <tr>
+        <th>ชื่อ</th>
+        <th>รูปเวร</th>
+        <th>อัปโหลด</th>
+        <th>สถานะ</th>
+        <th>ครู</th>
+      </tr>
+    </thead>
+    <tbody id="dutyBody"></tbody>
+  </table>
 
-  <button onclick="teacherLogin()">🔑 โหมดครู</button>
   <button class="back" onclick="location.href='index.html'">⬅ กลับหน้าแรก</button>
 </div>
 
-<script type="module">
-/* ===== Firebase ===== */
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+<input type="file" id="fileInput" hidden>
 
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, doc, getDoc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
+
+/* Firebase */
 const firebaseConfig = {
   apiKey: "AIzaSyD828fi7fnEuzeOvRbM6K1ESzcXRIZj8l8",
   authDomain: "money-c4c91.firebaseapp.com",
   projectId: "money-c4c91",
-  storageBucket: "money-c4c91.firebasestorage.app",
-  messagingSenderId: "398940344820",
-  appId: "1:398940344820:web:da5d8265be888546dee9a1"
+  storageBucket: "money-c4c91.firebasestorage.app"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const storage = getStorage(app);
 
-/* ===== DATA ===== */
-const dutyList = {
+/* รายชื่อเวร */
+const students = {
   mon:["พวัลย์","ชลณิชา","นราทิพย์","พงศ์พณิช","ดัสกร"],
   tue:["สุกัญญา","ปุณวัจน์","สุพัตรา","พสิษฐ์","วรายุทธ์"],
   wed:["ราชภูมิ","ประกาศิต","จักรกิต","ปัญญา"],
@@ -132,105 +111,73 @@ const dutyList = {
   fri:["ณัฐธวัช","ศุภกร","พีระเดช","อดิเทพ","นิพิฐพนธ์"]
 };
 
-const dayMap = {
-  mon:"วันจันทร์",
-  tue:"วันอังคาร",
-  wed:"วันพุธ",
-  thu:"วันพฤหัสบดี",
-  fri:"วันศุกร์"
-};
+const dayMap = ["sun","mon","tue","wed","thu","fri","sat"];
+const todayKey = dayMap[new Date().getDay()];
+const dayTH = {mon:"จันทร์",tue:"อังคาร",wed:"พุธ",thu:"พฤหัส",fri:"ศุกร์"};
 
-let isTeacher = false;
+document.getElementById("dayTitle").innerHTML = `เวรวัน <b>${dayTH[todayKey]||"ไม่มีเวร"}</b>`;
 
-/* ===== FUNCTIONS ===== */
-function getTodayKey(){
-  const d = new Date().getDay();
-  return {1:"mon",2:"tue",3:"wed",4:"thu",5:"fri"}[d] || null;
-}
-
-async function resetIfNewDay(todayKey){
-  const ref = doc(db,"duty","today");
-  const snap = await getDoc(ref);
-  const today = new Date().toISOString().split("T")[0];
-
-  if(!snap.exists() || snap.data().date !== today){
-    await setDoc(ref,{
-      date: today,
-      day: todayKey,
-      done:false
-    });
-  }
-}
+const tbody = document.getElementById("dutyBody");
 
 async function loadDuty(){
-  const todayKey = getTodayKey();
-  if(!todayKey){
-    document.body.innerHTML="<h2>วันนี้ไม่มีเวร</h2>";
-    return;
-  }
+  if(!students[todayKey]) return;
 
-  document.getElementById("dayText").innerText = dayMap[todayKey];
-  await resetIfNewDay(todayKey);
+  const refDoc = doc(db,"duty",todayKey);
+  const snap = await getDoc(refDoc);
+  const data = snap.exists()? snap.data():{};
 
-  const ref = doc(db,"duty","today");
-  const snap = await getDoc(ref);
-  const done = snap.data().done;
+  tbody.innerHTML="";
+  students[todayKey].forEach(name=>{
+    const info = data[name] || {};
+    const tr = document.createElement("tr");
 
-  const box = document.getElementById("students");
-  box.innerHTML="";
-
-  dutyList[todayKey].forEach(name=>{
-    box.innerHTML += `
-      <div class="student">
-        ${name}
-        <div class="status ${done?'done':'notyet'}">
-          ${done?'✔ ทำเวรแล้ว':'✖ ยังไม่ทำ'}
-        </div>
-      </div>
+    tr.innerHTML = `
+      <td>${name}</td>
+      <td>${info.image? `<img src="${info.image}">`:"-"}</td>
+      <td><button class="uploadBtn">อัปโหลด</button></td>
+      <td class="${info.done?'done':'notyet'}">${info.done?'✔ ทำแล้ว':'⏳ ยังไม่ทำ'}</td>
+      <td><button class="teacherBtn">ติ๊ก</button></td>
     `;
+
+    tr.querySelector(".uploadBtn").onclick = ()=> uploadImage(name);
+    tr.querySelector(".teacherBtn").onclick = ()=> teacherCheck(name);
+
+    tbody.appendChild(tr);
   });
-
-  if(isTeacher){
-    box.innerHTML += `
-      <button onclick="updateDuty(true)">✔ ติ๊กว่าทำเวรแล้ว</button>
-    `;
-  }
 }
 
-window.updateDuty = async(val)=>{
-  await setDoc(doc(db,"duty","today"),{
-    date:new Date().toISOString().split("T")[0],
-    day:getTodayKey(),
-    done:val
+let currentName="";
+function uploadImage(name){
+  currentName=name;
+  document.getElementById("fileInput").click();
+}
+
+document.getElementById("fileInput").onchange = async e=>{
+  const file = e.target.files[0];
+  if(!file) return;
+
+  const storageRef = ref(storage,`duty/${todayKey}/${currentName}.jpg`);
+  await uploadBytes(storageRef,file);
+  const url = await getDownloadURL(storageRef);
+
+  await setDoc(doc(db,"duty",todayKey),{
+    [currentName]:{ image:url, done:false }
+  },{merge:true});
+
+  loadDuty();
+};
+
+async function teacherCheck(name){
+  const pass = prompt("ใส่รหัสครู");
+  if(pass!=="1234") return alert("รหัสไม่ถูกต้อง");
+
+  await updateDoc(doc(db,"duty",todayKey),{
+    [`${name}.done`]:true
   });
   loadDuty();
 }
 
-window.teacherLogin = ()=>{
-  const pass = prompt("ใส่รหัสครู");
-  if(pass==="1234"){
-    isTeacher = true;
-    alert("เข้าสู่โหมดครู");
-    loadDuty();
-  }else{
-    alert("รหัสไม่ถูกต้อง");
-  }
-}
-
-/* INIT */
 loadDuty();
-
-/* emoji */
-const emojis=["🧹","✨","📋"];
-setInterval(()=>{
-  const e=document.createElement("div");
-  e.className="emoji";
-  e.innerText=emojis[Math.floor(Math.random()*emojis.length)];
-  e.style.left=Math.random()*100+"vw";
-  e.style.animationDuration=(3+Math.random()*4)+"s";
-  document.body.appendChild(e);
-  setTimeout(()=>e.remove(),7000);
-},400);
 </script>
 
 </body>
